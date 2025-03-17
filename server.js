@@ -8,8 +8,6 @@ const { collection, addDoc, doc, setDoc, getDoc, writeBatch, increment } = requi
 const app = express();
 
 // إعداد CORS
-const cors = require("cors");
-
 app.use(cors({
   origin: ["http://localhost:5184", "https://big-store-bj54000.vercel.app"],
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
