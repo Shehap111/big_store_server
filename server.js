@@ -9,7 +9,7 @@ const app = express();
 
 // إعداد CORS
 app.use(cors({
-  origin: 'https://big-store-bj54000.vercel.app',
+  origin: ["https://big-store-bj54000.vercel.app", "http://localhost:5184"],
 }));
 
 app.use(express.json());
