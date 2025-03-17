@@ -9,7 +9,10 @@ const app = express();
 
 // إعداد CORS
 app.use(cors({
-  origin: 'http://localhost:5187',
+  origin: ['http://localhost:5187', 'https://big-store-bj54000.vercel.app'], // ضيف كل الـ origins المسموح بها
+  methods: ['GET', 'POST'], // السماح بالـ GET و POST
+  allowedHeaders: ['Content-Type', 'Authorization'], // السماح بالرؤوس المطلوبة
+  credentials: true, // لو فيه Cookies أو بيانات مع الطلب
 }));
 
 app.use(express.json());
