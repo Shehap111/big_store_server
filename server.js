@@ -7,19 +7,20 @@ const { collection, addDoc, doc, setDoc, getDoc, writeBatch, increment } = requi
 
 const app = express();
 
-// إعداد CORS بشكل موسع
 app.use(cors({
   origin: ["https://big-store-bj54000.vercel.app", "http://localhost:5187"],
   methods: "GET, POST, OPTIONS",
-  allowedHeaders: "Content-Type",
+  allowedHeaders: "Content-Type, Authorization",
+  credentials: true,  // السماح بإرسال الـ cookies/headers المصادقة
 }));
 
-// دعم الـ preflight requests
+// دعم الـ preflight requests بشكل صحيح
 app.options('*', (req, res) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Origin", req.headers.origin || "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-  res.status(200).end();
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+  res.status(204).end(); // 204 عشان الـ preflight ميبقاش فيه بيانات في الريسبونس
 });
 
 app.use(express.json());
