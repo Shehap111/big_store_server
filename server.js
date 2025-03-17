@@ -2,41 +2,30 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-const { db } = require('./firebase');
+const { db } = require('./firebase'); // استيراد db من ملف التهيئة
 const { collection, addDoc, doc, setDoc, getDoc, writeBatch, increment } = require('firebase/firestore');
 
 const app = express();
 
+// إعداد CORS
 app.use(cors({
-  origin: ["https://big-store-bj54000.vercel.app", "http://localhost:5187"],
-  methods: "GET, POST, OPTIONS",
-  allowedHeaders: "Content-Type, Authorization",
-  credentials: true,  // السماح بإرسال الـ cookies/headers المصادقة
+  origin: 'http://localhost:5187',
 }));
-
-// دعم الـ preflight requests بشكل صحيح
-app.options('*', (req, res) => {
-  res.setHeader("Access-Control-Allow-Origin", req.headers.origin || "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  res.setHeader("Access-Control-Allow-Credentials", "true");
-  res.status(204).end(); // 204 عشان الـ preflight ميبقاش فيه بيانات في الريسبونس
-});
 
 app.use(express.json());
 
 const YOUR_DOMAIN = 'http://localhost:4242';
 
-// إنشاء جلسة Checkout
+// Route لإنشاء جلسة Checkout
 app.post('/create-checkout-session', async (req, res) => {
   try {
-    console.log("Received request body:", req.body);
     const { paymentMethod, selectedAddress, cartItems, totalAmount, shippingFee, userId, language } = req.body;
 
     if (!cartItems || cartItems.length === 0) {
       return res.status(400).json({ error: 'لا توجد منتجات في السلة!' });
     }
 
+    // تخزين cartItems في Firestore
     const cartRef = await addDoc(collection(db, 'carts'), {
       userId,
       products: cartItems,
@@ -60,6 +49,7 @@ app.post('/create-checkout-session', async (req, res) => {
       quantity: item.quantity,
     }));
 
+    // إنشاء جلسة Checkout
     const session = await stripe.checkout.sessions.create({
       line_items: lineItems,
       mode: 'payment',
@@ -81,7 +71,7 @@ app.post('/create-checkout-session', async (req, res) => {
   }
 });
 
-// نجاح الدفع
+// Route للتعامل مع نجاح الدفع
 app.post('/checkout-success', async (req, res) => {
   const { sessionId } = req.body;
 
@@ -95,6 +85,7 @@ app.post('/checkout-success', async (req, res) => {
         return res.status(400).send('Invalid metadata or missing data.');
       }
 
+      // استرجاع cartItems باستخدام cartId من Firestore
       const cartDocRef = doc(db, 'carts', cartId);
       const cartDoc = await getDoc(cartDocRef);
 
@@ -108,6 +99,7 @@ app.post('/checkout-success', async (req, res) => {
         return res.status(400).send('No products found in cart.');
       }
 
+      // تسجيل الطلب في Firestore
       const order = {
         userId,
         address: JSON.parse(address),
@@ -115,7 +107,7 @@ app.post('/checkout-success', async (req, res) => {
         totalAmount,
         shippingFee,
         orderDate: new Date().toISOString(),
-        deliveryDate: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toISOString(),
+        deliveryDate: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toISOString(),        
         paymentMethod: 'online',
         status: 'Paid',
         orderStatus: "Processing",
@@ -123,6 +115,7 @@ app.post('/checkout-success', async (req, res) => {
 
       await addDoc(collection(db, 'Orders'), order);
 
+      // تحديث المخزون والمبيعات لكل منتج
       const batch = writeBatch(db);
       cartItems.forEach((item) => {
         const productRef = doc(db, "products", String(item.id));
@@ -134,6 +127,7 @@ app.post('/checkout-success', async (req, res) => {
 
       await batch.commit();
 
+      // حذف السلة بعد الدفع الناجح
       await setDoc(cartDocRef, { status: 'paid' });
 
       res.status(200).send('Order successfully saved in Firebase, and stock updated.');
@@ -146,13 +140,9 @@ app.post('/checkout-success', async (req, res) => {
   }
 });
 
-app._router.stack.forEach(r => {
-  if (r.route && r.route.path) {
-    console.log(r.route.path);
-  }
-});
+// تشغيل السيرفر
+app.listen(4242, () => console.log('Backend running on port 4242'));
 
-// Route لاختبار السيرفر
 app.get('/', (req, res) => {
   res.send('Backend is working');
 });
