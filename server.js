@@ -146,6 +146,11 @@ app.post('/checkout-success', async (req, res) => {
   }
 });
 
+app._router.stack.forEach(r => {
+  if (r.route && r.route.path) {
+    console.log(r.route.path);
+  }
+});
 
 // Route لاختبار السيرفر
 app.get('/', (req, res) => {
