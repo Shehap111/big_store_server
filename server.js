@@ -7,14 +7,14 @@ const { collection, addDoc, doc, setDoc, getDoc, writeBatch, increment } = requi
 
 const app = express();
 
-// السماح بطلبات من الدومين الخاص بالفرونت إند
+// إعداد CORS
 app.use(cors({
-  origin: "https://big-store-bj54000.vercel.app",
-  methods: "GET,POST,PUT,DELETE",
-  allowedHeaders: "Content-Type,Authorization",
+  origin: 'https://big-store-bj54000.vercel.app',
 }));
+
 app.use(express.json());
 
+const YOUR_DOMAIN = 'http://localhost:4242';
 
 // Route لإنشاء جلسة Checkout
 app.post('/create-checkout-session', async (req, res) => {
@@ -53,8 +53,8 @@ app.post('/create-checkout-session', async (req, res) => {
     const session = await stripe.checkout.sessions.create({
       line_items: lineItems,
       mode: 'payment',
-      success_url: `https://big-store-bj54000.vercel.app/success?success=true&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `https://big-store-bj54000.vercel.app?canceled=true`,
+      success_url: `http://localhost:3000/success?success=true&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `http://localhost:3000?canceled=true`,
       metadata: {
         cartId: cartRef.id,
         address: JSON.stringify(selectedAddress),
