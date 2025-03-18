@@ -56,8 +56,8 @@ app.post('/create-checkout-session', async (req, res) => {
     const session = await stripe.checkout.sessions.create({
       line_items: lineItems,
       mode: 'payment',
-success_url: `https://big-store-bj54000.vercel.app/success?success=true&session_id={CHECKOUT_SESSION_ID}`,
-cancel_url: `https://big-store-bj54000.vercel.app?canceled=true`,
+success_url: process.env.NEXT_PUBLIC_SUCCESS_URL,
+cancel_url: process.env.NEXT_PUBLIC_CANCEL_URL,
       metadata: {
         cartId: cartRef.id,
         address: JSON.stringify(selectedAddress),
